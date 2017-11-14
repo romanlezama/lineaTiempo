@@ -1,4 +1,32 @@
 function fnGraphTimeLine( data ){
+
+	/**
+	 * Encuentro el año menor y el mayor de todo el array para establecer los rangos del gráfico
+	 */
+	var minMaxArray = function( aData ){
+		var iAnioMin, iAnioMax;
+		for( var i=0; i<aData.length; i++ ){
+			var iAnio = aData[i][0];
+			iAnioMin = ( iAnioMin < iAnio ) ? iAnioMin : iAnio;
+			iAnioMax = ( iAnioMax > iAnio ) ? iAnioMax : iAnio;
+		}
+		return {
+			min: iAnioMin,
+			max: iAnioMax
+		};
+	};
+
+	var anioMinino, anioMaximo;
+	for(var j=0; j<data.length; j++){
+		var colonia = data[j];
+		var oMinMaxDel = minMaxArray( colonia.delitos );
+		var oMinMaxPob = minMaxArray( colonia.poblacion );
+		var tempMin = ( oMinMaxDel.min < oMinMaxPob.min ) ? oMinMaxDel.min : oMinMaxPob.min;
+		anioMinino = ( anioMinino < tempMin ) ? anioMinino : tempMin;
+		var tempMax = ( oMinMaxDel.max > oMinMaxPob.max ) ? oMinMaxDel.max : oMinMaxPob.max;
+		anioMaximo = ( anioMaximo > tempMax ) ? anioMaximo : tempMax;
+	}
+
 	/**
 	 * Varios accesorios que especifican las cuatro dimensiones del dato a visualizar.
 	 */
@@ -18,7 +46,7 @@ function fnGraphTimeLine( data ){
 	/**
 	 * Varias escalas. Estos dominios hacen suposiciones de datos, naturalmente.
 	 */
-	var xScale = d3.scale.linear().domain( [1800, 2030] ).range( [0, width] ),
+	var xScale = d3.scale.linear().domain( [anioMinino, anioMaximo+5] ).range( [0, width] ),
 		yScale = d3.scale.linear().domain( [10, 85] ).range( [height, 0] ),
 		radiusScale = d3.scale.sqrt().domain( [0, 5e8] ).range( [0, 40] ),
 		colorScale = d3.scale.category10();
@@ -82,18 +110,18 @@ function fnGraphTimeLine( data ){
 		.attr( "text-anchor", "end" )
 		.attr( "y", height - 24 )
 		.attr( "x", width )
-		.text( 1800 );
+		.text( anioMinino );
 
 	/** 
 	 * Se cargan los datos del json
 	 */
 	// Una bisectriz desde muchos datos de naciones son escasamente definidos.
 	var bisect = d3.bisector( function( d ){ return d[ 0 ]; } );
-	// Se agrega un punto por nacion. Se inicializa los datos en 1800 y se establecen los colores
+	// Se agrega un punto por nacion. Se inicializa los datos en anioMinino y se establecen los colores
 	var dot = svg.append( "g" )
 			.attr( "class", "dots" )
 		.selectAll( ".dot" )
-			.data( interpolateData( 1800 ) )
+			.data( interpolateData( anioMinino ) )
 		.enter().append( "circle" )
 			.attr( "class", "dot" )
 			.style( "fill", function( d ){ return colorScale( color( d ) ); } )
@@ -138,7 +166,7 @@ function fnGraphTimeLine( data ){
 	// Después de que termina la transición, se podrá mover el mouse para cambiar el año
 	function enableInteraction(){
 		var yearScale = d3.scale.linear()
-			.domain( [1800, 2009] )
+			.domain( [anioMinino, anioMaximo] )
 			.range( [box.x + 10, box.x + box.width -10] )
 			.clamp( true );
 		// Cancelar la transición actual, si hay alguna
@@ -166,7 +194,7 @@ function fnGraphTimeLine( data ){
 	// Interpola el cuadro completo por la primera interpolación del año, y luego los datos.
 	// Para los datos interpolados, los puntos y etiquetas son re-dibujados.
 	function tweenYear(){
-		var year = d3.interpolateNumber( 1800, 2009 );
+		var year = d3.interpolateNumber( anioMinino, anioMaximo );
 		return function( t ){ displayYear( year(t) ); };
 	}
 
